@@ -1,0 +1,10 @@
+[core]
+	repositoryformatversion = 0
+	filemode = false
+	bare = false
+	logallrefupdates = true
+	symlinks = false
+	ignorecase = true
+[remote "linadabi"]
+	url = https://github.com/zhengdaozhao/linadadian.git
+	fetch = +refs/heads/*:refs/remotes/linadabi/*

@@ -1,0 +1,96 @@
+/* 全局样式 */
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background-color: #f0f2f5; /* 浅灰色背景 */
+  color: #333; /* 默认文字颜色 */
+}
+
+/* Ant Design Layout 样式调整 */
+.ant-layout {
+  min-height: 100vh; /* 使布局占满整个视口高度 */
+}
+
+/* Header 样式 */
+.ant-layout-header {
+  background-color: #1890ff; /* 蓝色背景 */
+  padding: 0 20px; /* 左右内边距 */
+  display: flex;
+  align-items: center;
+}
+
+/* Menu 样式 */
+.ant-menu {
+  background-color: transparent; /* 透明背景 */
+  border-bottom: none; /* 去掉底部边框 */
+}
+
+.ant-menu-horizontal {
+  line-height: 64px; /* 与 Header 高度一致 */
+}
+
+.ant-menu-item {
+  color: rgba(255, 255, 255, 0.8); /* 菜单项文字颜色 */
+  font-size: 16px; /* 菜单项文字大小 */
+  margin: 0 10px; /* 菜单项间距 */
+}
+
+.ant-menu-item:hover {
+  color: #fff; /* 鼠标悬停时文字颜色 */
+  background-color: rgba(255, 255, 255, 0.1); /* 鼠标悬停时背景颜色 */
+}
+
+.ant-menu-item-selected {
+  color: #fff; /* 选中项文字颜色 */
+  background-color: rgba(255, 255, 255, 0.2); /* 选中项背景颜色 */
+}
+
+/* Content 样式 */
+.ant-layout-content {
+  padding: 24px; /* 内容区域内边距 */
+  background-color: #fff; /* 白色背景 */
+  margin: 24px; /* 外边距 */
+  border-radius: 8px; /* 圆角 */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* 阴影效果 */
+}
+
+/* 页面标题样式 */
+.page-title {
+  font-size: 24px;
+  font-weight: bold;
+  color: #1890ff; /* 蓝色标题 */
+  margin-bottom: 16px;
+}
+
+/* 按钮样式 */
+.ant-btn-primary {
+  background-color: #1890ff; /* 蓝色按钮 */
+  border-color: #1890ff;
+}
+
+.ant-btn-primary:hover {
+  background-color: #40a9ff; /* 鼠标悬停时按钮颜色 */
+  border-color: #40a9ff;
+}
+
+/* 活泼的颜色点缀 */
+.highlight {
+  color: #ff4d4f; /* 红色点缀 */
+}
+
+/* 响应式布局 */
+@media (max-width: 768px) {
+  .ant-layout-header {
+    padding: 0 10px; /* 小屏幕下减少内边距 */
+  }
+
+  .ant-menu-item {
+    margin: 0 5px; /* 小屏幕下减少菜单项间距 */
+    font-size: 14px; /* 小屏幕下减小字体大小 */
+  }
+
+  .ant-layout-content {
+    margin: 12px; /* 小屏幕下减少外边距 */
+    padding: 16px; /* 小屏幕下减少内边距 */
+  }
+}

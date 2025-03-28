@@ -1,0 +1,93 @@
+/* .flow-canvas-wrapper {
+  display: flex;
+  height: 100%;
+  width: 100%;
+}
+
+.flow-canvas {
+  flex: 1;
+  height: 600px;
+  border: 1px solid #eee;
+  border-radius: 4px;
+  position: relative;
+} */
+/* Update these styles */
+.flow-canvas-wrapper {
+    display: flex;
+    height: 600px; /* Set a fixed height */
+    width: 100%;
+    margin-top: 20px; /* Add some margin at the top */
+  }
+  
+  .flow-canvas {
+    flex: 1;
+    height: 100%; /* Use 100% of parent height */
+    border: 1px solid #eee;
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden; /* Prevent overflow */
+  }
+  
+  /* Add this to ensure ReactFlow fills the container */
+  .react-flow {
+    width: 100%;
+    height: 100%;
+  }
+
+.flow-canvas.drop-target {
+  border: 2px dashed #1a192b;
+  background-color: rgba(240, 248, 255, 0.3);
+}
+/* 20250328 add */
+.react-flow__container {
+  background-color: #fffbe6; /* Light yellow color */
+}
+
+.react-flow__node {
+  cursor: pointer;
+}
+
+.react-flow__handle {
+  width: 8px;
+  height: 8px;
+  background-color: #1890ff;
+}
+
+.react-flow__handle:hover {
+  background-color: #40a9ff;
+}
+
+.react-flow__edge-path {
+  stroke: #1890ff;
+  stroke-width: 2;
+}
+
+.react-flow__controls {
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.15);
+}
+
+.react-flow__controls button {
+  background-color: white;
+  border: 1px solid #eee;
+  box-shadow: none;
+}
+
+.react-flow__controls button:hover {
+  background-color: #f0f0f0;
+}
+
+.react-flow__panel {
+  background-color: transparent;
+}
+
+.status-node {
+  padding: 10px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  background-color: white;
+}
+
+.status-node label {
+  display: block;
+  margin-bottom: 5px;
+}

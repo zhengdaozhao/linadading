@@ -1,0 +1,19 @@
+2025/3/19 ver1
+# Please enter the commit message for your changes. Lines starting
+# with '#' will be ignored, and an empty message aborts the commit.
+#
+# On branch zpddyz
+# Changes to be committed:
+#	modified:   index.html
+#	modified:   src/App.jsx
+#	modified:   src/pages/TemplateDesign.css
+#	modified:   src/pages/TemplateDesign.jsx
+#	new file:   src/pages/subComponents/ContainerNode.css
+#	new file:   src/pages/subComponents/ContainerNode.jsx
+#	new file:   src/pages/subComponents/CustomNode.css
+#	modified:   src/pages/subComponents/CustomNode.jsx
+#	new file:   src/pages/subComponents/FlowCanvas.css
+#	modified:   src/pages/subComponents/FlowCanvas.jsx
+#	new file:   src/pages/subComponents/Sidebar.css
+#	modified:   src/pages/subComponents/Sidebar.jsx
+#
