@@ -1,0 +1,32 @@
+.react-flow__node {
+  cursor: grab;
+}
+
+.react-flow__node.selected {
+  cursor: grabbing;
+}
+
+.react-flow__handle {
+  width: 8px;
+  height: 8px;
+  background-color: #555;
+}
+
+.react-flow__handle-top {
+  top: -4px;
+}
+
+.react-flow__handle-bottom {
+  bottom: -4px;
+}
+
+.react-flow__handle-left {
+  left: -4px;
+}
+
+.react-flow__handle-right {
+  right: -4px;
+}
+.react-flow__container {
+  background: transparent !important;
+}
