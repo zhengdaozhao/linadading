@@ -163,7 +163,8 @@ const WorkflowCreationContent = () => {
               nodeType: item.nodeType || 'container',
               innerNodes: item.innerNodes || [],
               assignTo: '',
-              status: 'PENDING'
+              status: 'Pending',
+              onDelete: onNodeDelete
             },
           };
           setStepCounter(prev => prev + 1);
@@ -176,7 +177,8 @@ const WorkflowCreationContent = () => {
             position,
             data: { 
               label: `条件 ${branchCounter}`,
-              condition: 'true',
+              condition: 'input the condition',
+              onDelete: onNodeDelete
             },
           };
           setBranchCounter(prev => prev + 1);
@@ -197,6 +199,11 @@ const WorkflowCreationContent = () => {
     },
     [reactFlowInstance, stepCounter, branchCounter]
   );
+
+  // Inside your component where you define nodes and edges
+  const onNodeDelete = useCallback((nodeId) => {
+    setNodes((nds) => nds.filter((node) => node.id !== nodeId));
+  }, [setNodes]);
 
   // Load an existing workflow
   const loadWorkflow = async (workflow) => {
