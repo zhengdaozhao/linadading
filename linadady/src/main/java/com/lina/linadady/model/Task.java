@@ -7,22 +7,19 @@ import org.springframework.data.annotation.Id;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class Step {
+public class Task {
     @Id
     private String id;
-    private String label;
-    private String workflowId;
+    private String name;
+    private String description;
     private String stepId;
-    private String upperStep;
-    private String nextStep;
-    private String assignTo;
+    private String assignTeam;
     private String status;
-    private Map<String, Double> position;
+    private List<InnerNode> innerNodes;
+    private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    private List<Task> tasks;
 }

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8080/api/workflows';
+const API_URL = 'http://localhost:9700/api/workflows';
 
 const workflowService = {
   getAllWorkflows: async () => {

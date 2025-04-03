@@ -108,7 +108,7 @@ const TemplateItem = ({ template, onDragStart, onDelete }) => {
 const Sidebar = ({ savedTemplates, onDeleteTemplate, isLoading }) => {
   return (
     <div className="sidebar">
-      <h3>Field Types</h3>
+      <h3>Base Components</h3>
       <div className="sidebar-section">
         <DraggableItem type="text" label="Text Field" />
         <DraggableItem type="email" label="Email Field" />

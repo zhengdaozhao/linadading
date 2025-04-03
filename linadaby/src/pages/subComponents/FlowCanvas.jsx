@@ -389,7 +389,7 @@ import CustomNode from './CustomNode';
 import ContainerNode from './ContainerNode';
 import Sidebar from './Sidebar';
 import './FlowCanvas.css';
-import TemplateService from '../../services/TemplateService';
+import TemplateService from '../../services/templateService';
 import StatusNode from './StatusNode';
 
 // Define node types

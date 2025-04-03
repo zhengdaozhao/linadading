@@ -1,0 +1,49 @@
+package com.lina.linadady.service;
+
+import com.lina.linadady.model.Task;
+import com.lina.linadady.repository.TaskRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+@Service
+public class TaskService {
+    
+    @Autowired
+    private TaskRepository taskRepository;
+    
+    public List<Task> getAllTasks() {
+        List<Task> tasks = new ArrayList<>();
+        taskRepository.findAll().forEach(tasks::add);
+        return tasks;
+    }
+    
+    public Optional<Task> getTaskById(String id) {
+        return taskRepository.findById(id);
+    }
+    
+    public Task getTasksByStepId(String stepId) {
+        return taskRepository.findById(stepId)
+        .orElseThrow(() -> new RuntimeException("Task not found"));
+    }
+    
+    public Task createTask(Task task) {
+        task.setCreatedAt(LocalDateTime.now());
+        task.setUpdatedAt(LocalDateTime.now());
+        return taskRepository.save(task);
+    }
+    
+    public Task updateTask(String id, Task task) {
+        task.setId(id);
+        task.setUpdatedAt(LocalDateTime.now());
+        return taskRepository.save(task);
+    }
+    
+    public void deleteTask(String id) {
+        taskRepository.deleteById(id);
+    }
+}

@@ -38,7 +38,7 @@ const BranchNode = ({ data, isConnectable, id }) => {
           width: '100px',
           height: '100px',
           transform: 'rotate(45deg)',
-          background: '#c8e6c9',
+          background: '#ffff99',
           border: '1px solid #ddd',
           display: 'flex',
           flexDirection: 'column',

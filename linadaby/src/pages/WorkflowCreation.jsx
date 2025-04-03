@@ -1,66 +1,62 @@
-// src/pages/WorkflowCreation.js
-// import React from 'react';
-
-// const WorkflowCreation = () => {
-//   return <div>工作流程做成页面</div>;
-// };
-
-// export default WorkflowCreation;
-
-
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import {ReactFlow,  
-  ReactFlowProvider, 
-  addEdge, 
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { 
+  ReactFlow, 
+  Background, 
+  Controls, 
+  Panel, 
   useNodesState, 
-  useEdgesState,
-  useReactFlow,
-  Controls,
-  Background,
-  Panel
+  useEdgesState, 
+  addEdge,
+  MarkerType
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { Box, Grid, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material';
+import { Box, Button, Typography, TextField, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { v4 as uuidv4 } from 'uuid';
+
 import WorkflowSidebar from '../components/workflow/WorkflowSidebar';
-import StepNode from '../components/workflow/StepNode';
+import StepNode from '../components/nodes/StepNode';
 import BranchNode from '../components/workflow/BranchNode';
+import TaskEditDialog from '../components/nodes/TaskEditDialog';
 import workflowService from '../services/workflowService';
 import templateService from '../services/templateService';
-import { v4 as uuidv4 } from 'uuid';
 import '../components/workflow/workflow.css';
+// import { useTaskCounter } from '../context/TaskCounterContext';
 
-// Custom node types
+// Node types registration
 const nodeTypes = {
-  stepNode: StepNode,
-  branchNode: BranchNode,
+  step: StepNode,
+  branch: BranchNode,
 };
 
-// This is the main component that needs to be wrapped with ReactFlowProvider
-const WorkflowCreationContent = () => {
-  const reactFlowWrapper = useRef(null);
+
+const WorkflowCreation = () => {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-  // const [reactFlowInstance, setReactFlowInstance] = useState(null);
-  // Use the hook to get the instance
-  // const { project, getViewport } = useReactFlow();
-  const reactFlowInstance = useReactFlow();
   const [templates, setTemplates] = useState([]);
   const [workflows, setWorkflows] = useState([]);
   const [stepCounter, setStepCounter] = useState(1);
-  const [branchCounter, setBranchCounter] = useState(1);
+  const [taskCounters, setTaskCounters] = useState({});
+  const [selectedTask, setSelectedTask] = useState(null);
+  const [taskDialogOpen, setTaskDialogOpen] = useState(false);
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
-  const [workflowName, setWorkflowName] = useState('');
+  const [workflowName, setWorkflowName] = useState('New Workflow');
 
-  // Load templates and workflows on component mount
+// 20250403 Add this state variable
+  const [globalTaskCounter, setGlobalTaskCounter] = useState(1);
+  // Use the context instead
+  // const { taskCounter, incrementTaskCounter, setCounter } = useTaskCounter();
+  
+  const reactFlowWrapper = useRef(null);
+  const reactFlowInstance = useRef(null);
+  
+  // Load templates and workflows
   useEffect(() => {
     const fetchData = async () => {
       try {
         const templatesData = await templateService.getAllTemplates();
-        console.log('Templates fetched:', templatesData);
         setTemplates(templatesData);
         
         const workflowsData = await workflowService.getAllWorkflows();
-        console.log('Workflows fetched:', workflowsData);
         setWorkflows(workflowsData);
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -69,191 +65,357 @@ const WorkflowCreationContent = () => {
     
     fetchData();
   }, []);
-
-  // Handle connections between nodes
+  
   const onConnect = useCallback((params) => {
-    setEdges((eds) => addEdge({ ...params, animated: true }, eds));
+    // Create edge with default marker
+    const newEdge = {
+      ...params,
+      id: `e-${uuidv4()}`,
+      // type: 'smoothstep',
+      animated: true,
+      markerEnd: {
+        type: MarkerType.ArrowClosed,
+      },
+    };
+    setEdges((eds) => addEdge(newEdge, eds));
   }, [setEdges]);
 
-  // // Setup when flow is loaded
-  // const onInit = useCallback((reactFlowInstance) => {
-  //   console.log('ReactFlow initialized', reactFlowInstance);
-  //   setReactFlowInstance(reactFlowInstance);
-  // }, []);
-
-  // Handle drag over event
+  const onInit = useCallback((instance) => {
+    reactFlowInstance.current = instance;
+  }, []);
+  
   const onDragOver = useCallback((event) => {
     event.preventDefault();
     event.dataTransfer.dropEffect = 'move';
   }, []);
-
-  // Handle drop event
+  
   const onDrop = useCallback(
     (event) => {
       event.preventDefault();
       
-      // Add debugging
-      console.log('Drop event triggered');
-      
       const reactFlowBounds = reactFlowWrapper.current.getBoundingClientRect();
+      const dataStr = event.dataTransfer.getData('text/plain');
       
-      // Check what data is available in the dataTransfer
-      console.log('Available types:', event.dataTransfer.types);
-      
-      const type = event.dataTransfer.getData('application/reactflow/type');
-      console.log('Type retrieved:', type);
-      
-      // Get the item data
-      const itemData = event.dataTransfer.getData('application/reactflow/item');
-      console.log('Item data retrieved:', itemData);
+      if (!dataStr || !reactFlowInstance.current) {
+        return;
+      }
       
       try {
-        // Get the raw data string
-        const dataStr = event.dataTransfer.getData('text/plain');
-        console.log('Raw data from drop event:', dataStr);
-        
-        // Check if we have valid data
-        if (!dataStr) {
-          console.log('No data found in drop event');
-          return;
-        }
-        
-        // Try to parse the JSON data
-        let data;
-        try {
-          data = JSON.parse(dataStr);
-        } catch (parseError) {
-          console.error('Error parsing JSON:', parseError);
-          console.log('Invalid JSON string:', dataStr);
-          return;
-        }
-        
-        // Extract type and item
-        const type = data?.type;
-        const item = data?.item;
-        
-        console.log('Parsed data:', { type, item });
-        
-        if (!type || !item) {
-          console.log('Missing type or item in parsed data');
-          return;
-        }
-
-        // Calculate position using the screenToFlowPosition method
-        const position = reactFlowInstance.screenToFlowPosition({
+        const data = JSON.parse(dataStr);
+        const position = reactFlowInstance.current.screenToFlowPosition({
           x: event.clientX - reactFlowBounds.left,
-          y: event.clientY - reactFlowBounds.top
+          y: event.clientY - reactFlowBounds.top,
         });
         
-        console.log('Calculated position:', position);
+        let newNode;
         
-        // Create the node based on type
-        let newNode = null;
-        
-        if (type === 'template') {
-          // Create a step node from template
+        if (data.type === 'step') {
+          // Create a new step node
+          const stepId = `step-${uuidv4()}`;
+          const stepLabel = `STEP ${stepCounter}`;
+          
           newNode = {
-            id: `step-${uuidv4()}`,
-            type: 'stepNode',
+            id: stepId,
+            type: 'step',
             position,
-            data: { 
-              label: `STEP ${stepCounter}`,
-              templateId: item.id,
-              templateName: item.label || 'Unnamed Template',
-              nodeType: item.nodeType || 'container',
-              innerNodes: item.innerNodes || [],
-              assignTo: '',
-              status: 'Pending',
-              onDelete: onNodeDelete
+            data: {
+              label: stepLabel,
+              tasks: [],
+              onStepUpdate: handleStepUpdate,
+              onTaskClick: handleTaskClick,
+              onTaskReorder: handleTaskReorder,
+              // 2025/4/3
+              globalTaskCounter: globalTaskCounter,
+              updateGlobalTaskCounter: updateGlobalTaskCounter
             },
           };
+          console.log('New Node drop method is set');
           setStepCounter(prev => prev + 1);
-        } 
-        else if (type === 'branch') {
-          // Create a branch node
+          
+          // Initialize task counter for this step
+          // setTaskCounters(prev => ({
+          //   ...prev,
+          //   [stepId]: 1
+          // }));
+        } else if (data.type === 'branch') {
+          // Create a new branch node
           newNode = {
             id: `branch-${uuidv4()}`,
-            type: 'branchNode',
+            type: 'branch',
             position,
-            data: { 
-              label: `条件 ${branchCounter}`,
-              condition: 'input the condition',
-              onDelete: onNodeDelete
+            data: {
+              label: 'Branch',
+              condition: '',
+              onBranchUpdate: handleBranchUpdate
             },
           };
-          setBranchCounter(prev => prev + 1);
-        }
-        else if (type === 'workflow') {
+        } 
+        else if (data.type === 'workflow') {
           // Load an existing workflow
-          loadWorkflow(item);
+          loadWorkflow(data.item);
           return;
         }
-
+        
         if (newNode) {
-          console.log('Adding new node:', newNode);
+          console.log('New Node is created',newNode);
           setNodes((nds) => nds.concat(newNode));
         }
       } catch (error) {
-        console.error('Error processing dropped item:', error);
+        console.error('Error processing drop:', error);
       }
     },
-    [reactFlowInstance, stepCounter, branchCounter]
+    [reactFlowInstance, stepCounter, globalTaskCounter]
   );
-
-  // Inside your component where you define nodes and edges
-  const onNodeDelete = useCallback((nodeId) => {
-    setNodes((nds) => nds.filter((node) => node.id !== nodeId));
-  }, [setNodes]);
-
-  // Load an existing workflow
-  const loadWorkflow = async (workflow) => {
+  
+  const handleStepUpdate = (stepId, updatedStep) => {
+    // updateGlobalTaskCounter(globalTaskCounter+1);
+    setNodes(nodes => 
+      nodes.map(node => 
+        node.id === stepId 
+          ? { 
+              ...node, 
+              data: { 
+                ...node.data, 
+                ...updatedStep,
+                onStepUpdate: node.data.onStepUpdate,
+                onTaskClick: node.data.onTaskClick,
+                onTaskReorder: node.data.onTaskReorder,
+                onDropTemplate: node.data.onDropTemplate,
+                // 2025/4/3
+                // globalTaskCounter: globalTaskCounter,
+                // updateGlobalTaskCounter: node.data.updateGlobalTaskCounter
+              } 
+            } 
+          : node
+      )
+    );
+  };
+  
+  const handleBranchUpdate = (branchId, updatedBranch) => {
+    setNodes(nodes => 
+      nodes.map(node => 
+        node.id === branchId 
+          ? { 
+              ...node, 
+              data: { 
+                ...node.data, 
+                ...updatedBranch,
+                onBranchUpdate: node.data.onBranchUpdate
+              } 
+            } 
+          : node
+      )
+    );
+  };
+  
+  const handleTaskClick = (task) => {
+    setSelectedTask(task);
+    setTaskDialogOpen(true);
+  };
+  
+  const handleTaskUpdate = (updatedTask) => {
+    // Find the step that contains this task
+    const stepNode = nodes.find(node => 
+      node.type === 'step' && 
+      node.data.tasks && 
+      node.data.tasks.some(t => t.id === updatedTask.id)
+    );
+    
+    if (stepNode) {
+      // Update the task in the step's tasks array
+      const updatedTasks = stepNode.data.tasks.map(task => 
+        task.id === updatedTask.id ? updatedTask : task
+      );
+      
+      // Update the node with the new tasks array
+      handleStepUpdate(stepNode.id, { tasks: updatedTasks });
+    }
+    
+    setTaskDialogOpen(false);
+    setSelectedTask(null);
+  };
+  const deleteWorkflow = async (workflowId) => {
     try {
-      const workflowData = await workflowService.getWorkflowById(workflow.id);
-      
-      // Process steps and branches to create nodes
-      const newNodes = [];
-      const newEdges = [];
-      
-      // Process steps
-      workflowData.steps.forEach(step => {
-        newNodes.push({
-          id: step.id,
-          type: 'stepNode',
-          position: step.position || { x: 100, y: 100 + newNodes.length * 100 },
-          data: {
-            label: step.label,
-            templateId: step.templateId,
-            templateName: step.templateName,
-            innerNodes: step.innerNodes || [],
-            assignTo: step.assignTo,
-            status: step.status
+      await workflowService.deleteWorkflow(workflowId);
+      console.log(`Workflow ${workflowId} deleted successfully`);
+
+      // Refresh workflows list
+      const workflowsData = await workflowService.getAllWorkflows();
+      setWorkflows(workflowsData);
+    } catch (error) {
+      console.error('Error deleting workflow:', error);
+    }
+  };
+  // 2025/4/3 Add this function to update the global task counter
+  const updateGlobalTaskCounter = (taskCount) => {
+    setGlobalTaskCounter(taskCount)
+  // Update all step nodes with the new counter value
+  setNodes(nodes => 
+    nodes.map(node => 
+      node.type === 'step' 
+        ? { 
+            ...node, 
+            data: { 
+              ...node.data, 
+              globalTaskCounter: taskCount
+            } 
+          } 
+        : node
+    )
+  );
+  }
+
+  // const handleDropTemplateIntoStep = (template, stepId) => {
+  //   // Find the step node
+  //   console.log('Dropped template into step:', template, stepId);
+  //   const stepNode = nodes.find(node => node.id === stepId);
+    
+  //   if (!stepNode) return;
+    
+  //   // Get the current task counter for this step
+  //   const taskCounter = taskCounters[stepId] || 1;
+  //   // console.log('Task counter for step', stepId, ':', taskCounter);
+    
+  //   // Create a new task from the template
+  //   const newTask = {
+  //     id: `task-${uuidv4()}`,
+  //     name: `Task ${taskCounter}`,
+  //     stepId: stepId,
+  //     templateId: template.id,
+  //     innerNodes: template.innerNodes ? [...template.innerNodes] : [],
+  //     createdAt: new Date().toISOString(),
+  //     updatedAt: new Date().toISOString()
+  //   };
+    
+  //   // Add the task to the step's tasks array
+  //   const updatedTasks = [...(stepNode.data.tasks || []), newTask];
+    
+  //   // Update the step node
+  //   handleStepUpdate(stepId, { tasks: updatedTasks });
+    
+  //   // Increment the task counter for this step
+  //   setTaskCounters(prev => ({
+  //     ...prev,
+  //     [stepId]: prev[stepId] + 1 || 2
+  //   }));
+  // };
+  
+  const handleTaskReorder = (stepId, sourceIndex, targetIndex) => {
+    // Find the step node
+    const stepNode = nodes.find(node => node.id === stepId);
+    
+    if (!stepNode || !stepNode.data.tasks) return;
+    
+    // Create a copy of the tasks array
+    const updatedTasks = [...stepNode.data.tasks];
+    
+    // Remove the task from the source index
+    const [movedTask] = updatedTasks.splice(sourceIndex, 1);
+    
+    // Insert the task at the target index
+    updatedTasks.splice(targetIndex, 0, movedTask);
+    
+    // Update the task names based on their new order
+    const renamedTasks = updatedTasks.map((task, index) => ({
+      ...task,
+      name: `Task ${index + 1}`
+    }));
+    
+    // Update the step node
+    handleStepUpdate(stepId, { tasks: renamedTasks });
+  };
+  
+  const loadWorkflow = (workflow) => {
+    if (!workflow || !workflow.id) return;
+    
+    // Clear current workflow
+    setNodes([]);
+    setEdges([]);
+    
+    // Set workflow details
+    setWorkflowName(workflow.name || 'New Workflow');
+    // setWorkflowDescription(workflow.description || '');
+    
+    // Create nodes from steps
+    const newNodes = [];
+    const newEdges = [];
+    let maxStepNumber = 0;
+    
+    // Add step nodes
+    if (workflow.steps && workflow.steps.length > 0) {
+      workflow.steps.forEach(step => {
+        // Extract step number from label if possible
+        const stepNumberMatch = step.label && step.label.match(/STEP (\d+)/);
+        if (stepNumberMatch && stepNumberMatch[1]) {
+          const stepNumber = parseInt(stepNumberMatch[1], 10);
+          if (stepNumber > maxStepNumber) {
+            maxStepNumber = stepNumber;
+          }
+        }
+        
+        // Process tasks for this step
+        const tasks = step.tasks || [];
+        let maxTaskNumber = 0;
+        
+        // Update task counters based on task names
+        tasks.forEach(task => {
+          const taskNumberMatch = task.name && task.name.match(/Task (\d+)/);
+          if (taskNumberMatch && taskNumberMatch[1]) {
+            const taskNumber = parseInt(taskNumberMatch[1], 10);
+            if (taskNumber > maxTaskNumber) {
+              maxTaskNumber = taskNumber;
+            }
           }
         });
         
-        // Create edges if nextStep exists
+        // Create step node
+        newNodes.push({
+          id: step.id,
+          type: 'step',
+          position: step.position || { x: 0, y: 0 },
+          data: {
+            label: step.label,
+            tasks: tasks,
+            onStepUpdate: handleStepUpdate,
+            onTaskClick: handleTaskClick,
+            onTaskReorder: handleTaskReorder,
+            // 2025/4/3 add for task counter golbalization
+            globalTaskCounter: globalTaskCounter,
+            updateGlobalTaskCounter: updateGlobalTaskCounter
+          }
+        });
+        
+        // Update task counter for this step
+        setTaskCounters(prev => ({
+          ...prev,
+          [step.id]: maxTaskNumber + 1
+        }));
+
+        // Create edges based on connections
         if (step.nextStep) {
           newEdges.push({
             id: `e-${step.id}-${step.nextStep}`,
             source: step.id,
             target: step.nextStep,
             animated: true
-          });
-        }
+        })}
       });
-      
-      // Process branches
-      workflowData.branches.forEach(branch => {
+    }
+    
+    // Add branch nodes
+    if (workflow.branches && workflow.branches.length > 0) {
+      workflow.branches.forEach(branch => {
         newNodes.push({
           id: branch.id,
-          type: 'branchNode',
-          position: branch.position || { x: 300, y: 100 + newNodes.length * 100 },
+          type: 'branch',
+          position: branch.position || { x: 0, y: 0 },
           data: {
-            label: branch.label,
-            condition: branch.condition
+            label: branch.label || 'Branch',
+            condition: branch.condition || '',
+            onBranchUpdate: handleBranchUpdate
           }
         });
-        
-        // Create edges for branch connections
+
         if (branch.upperStep) {
           newEdges.push({
             id: `e-${branch.upperStep}-${branch.id}`,
@@ -283,32 +445,59 @@ const WorkflowCreationContent = () => {
           });
         }
       });
-      
-      // Update state with new nodes and edges
-      setNodes(newNodes);
-      setEdges(newEdges);
-      
-      // Update counters
-      const maxStepNumber = Math.max(...workflowData.steps.map(s => {
-        const match = s.label.match(/STEP (\d+)/);
-        return match ? parseInt(match[1]) : 0;
-      }), 0);
-      
-      const maxBranchNumber = Math.max(...workflowData.branches.map(b => {
-        const match = b.label.match(/条件 (\d+)/);
-        return match ? parseInt(match[1]) : 0;
-      }), 0);
-      
-      setStepCounter(maxStepNumber + 1);
-      setBranchCounter(maxBranchNumber + 1);
-      
-    } catch (error) {
-      console.error('Error loading workflow:', error);
     }
+    // Update state
+    setNodes(newNodes);
+    setEdges(newEdges);
+    setStepCounter(maxStepNumber + 1);
   };
-
-  // Save the current workflow
+  
+  const handleSaveWorkflow = () => {
+    setSaveDialogOpen(true);
+  };
+  
   const saveWorkflow = async () => {
+    // try {
+    //   // Prepare workflow data
+    //   const workflowData = {
+    //     name: workflowName,
+    //     // description: workflowDescription,
+    //     steps: nodes
+    //       .filter(node => node.type === 'step')
+    //       .map(node => ({
+    //         id: node.id,
+    //         label: node.data.label,
+    //         position: { x: node.position.x, y: node.position.y },
+    //         tasks: node.data.tasks || []
+    //       })),
+    //     branches: nodes
+    //       .filter(node => node.type === 'branch')
+    //       .map(node => ({
+    //         id: node.id,
+    //         label: node.data.label || 'Branch',
+    //         condition: node.data.condition || '',
+    //         position: { x: node.position.x, y: node.position.y }
+    //       })),
+    //     edges: edges.map(edge => ({
+    //       id: edge.id,
+    //       source: edge.source,
+    //       target: edge.target
+    //     }))
+    //   };
+      
+    //   // Save workflow
+    //   const savedWorkflow = await workflowService.saveWorkflow(workflowData);
+    //   console.log('Workflow saved:', savedWorkflow);
+      
+    //   // Close dialog
+    //   setSaveDialogOpen(false);
+      
+    //   // Refresh workflows list
+    //   const workflowsData = await workflowService.getAllWorkflows();
+    //   setWorkflows(workflowsData);
+    // } catch (error) {
+    //   console.error('Error saving workflow:', error);
+    // }
     if (!workflowName.trim()) {
       alert('Please enter a workflow name');
       return;
@@ -323,7 +512,7 @@ const WorkflowCreationContent = () => {
         // Get node position for restoring layout
         const nodePosition = { x: node.position.x, y: node.position.y };
         
-        if (node.type === 'stepNode') {
+        if (node.type === 'step') {
           // Process step nodes
           const step = {
             id: node.id,
@@ -334,11 +523,12 @@ const WorkflowCreationContent = () => {
             assignTo: node.data.assignTo || '',
             status: node.data.status || 'PENDING',
             position: nodePosition,
+            tasks: node.data.tasks || [],
             upperStep: null,
             nextStep: null
           };
           steps.push(step);
-        } else if (node.type === 'branchNode') {
+        } else if (node.type === 'branch') {
           // Process branch nodes
           const branch = {
             id: node.id,
@@ -359,13 +549,13 @@ const WorkflowCreationContent = () => {
         const targetNode = nodes.find(n => n.id === edge.target);
         
         if (sourceNode && targetNode) {
-          if (sourceNode.type === 'stepNode') {
+          if (sourceNode.type === 'step') {
             // Step to any node
             const step = steps.find(s => s.id === sourceNode.id);
             if (step) {
               step.nextStep = targetNode.id;
             }
-          } else if (sourceNode.type === 'branchNode') {
+          } else if (sourceNode.type === 'branch') {
             // Branch to any node
             const branch = branches.find(b => b.id === sourceNode.id);
             if (branch) {
@@ -379,13 +569,13 @@ const WorkflowCreationContent = () => {
             }
           }
           
-          if (targetNode.type === 'stepNode') {
+          if (targetNode.type === 'step') {
             // Any node to step
             const step = steps.find(s => s.id === targetNode.id);
             if (step) {
               step.upperStep = sourceNode.id;
             }
-          } else if (targetNode.type === 'branchNode') {
+          } else if (targetNode.type === 'branch') {
             // Any node to branch
             const branch = branches.find(b => b.id === targetNode.id);
             if (branch) {
@@ -415,96 +605,78 @@ const WorkflowCreationContent = () => {
       setSaveDialogOpen(false);
       setWorkflowName('');
       
-      alert('Workflow saved successfully!');
+      // alert('Workflow saved successfully!');
     } catch (error) {
       console.error('Error saving workflow:', error);
       alert('Error saving workflow. Please try again.');
     }
-  };
 
+
+  };
+  
   return (
-    <Box sx={{ height: '100%', display: 'flex' }}>
-      {/* Left Sidebar */}
-      <Box sx={{ width: '300px', height: '100%', borderRight: '1px solid #ddd' }}>
-        <WorkflowSidebar 
-          templates={templates} 
-          workflows={workflows} 
-          onSaveClick={() => setSaveDialogOpen(true)} 
-        />
-      </Box>
+    <Box sx={{ display: 'flex', height: 'calc(100vh - 64px)' }}>
+      <WorkflowSidebar 
+        templates={templates} 
+        workflows={workflows} 
+        onSaveClick={handleSaveWorkflow} 
+        onDeleteWorkflow={deleteWorkflow} // Pass the delete function as a prop
+      />
       
-      {/* Right Canvas */}
-      <Box 
-        ref={reactFlowWrapper} 
-        sx={{ 
-            flexGrow: 1, 
-            height: '100%',
-            position: 'relative', // Add this
-            overflow: 'hidden',   // Add this
-            '& .react-flow': { 
-              background: '#f8f8f8',
-              width: '100%',      // Add this
-              height: '100%'      // Add this
-            }
-          }}
-        >
+      <Box sx={{ flexGrow: 1, height: '100%' }} ref={reactFlowWrapper}>
         <ReactFlow
           nodes={nodes}
           edges={edges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
-          // onInit={onInit}
+          onInit={onInit}
           onDrop={onDrop}
           onDragOver={onDragOver}
           nodeTypes={nodeTypes}
+          // nodesDraggable={!isDraggingTask} // 当正在拖动任务时禁用节点拖动  
           fitView
-          deleteKeyCode="Delete"  // Add this
-          snapToGrid={true}       // Add this
-          snapGrid={[15, 15]}     // Add this
         >
+          <Background />
           <Controls />
-          <Background variant="dots" gap={12} size={1} />
         </ReactFlow>
       </Box>
+      
+      {/* Task Edit Dialog */}
+      <TaskEditDialog
+        open={taskDialogOpen}
+        onClose={() => setTaskDialogOpen(false)}
+        task={selectedTask}
+        onSave={handleTaskUpdate}
+      />
       
       {/* Save Workflow Dialog */}
       <Dialog open={saveDialogOpen} onClose={() => setSaveDialogOpen(false)}>
         <DialogTitle>Save Workflow</DialogTitle>
         <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            id="name"
-            label="Workflow Name"
-            type="text"
-            fullWidth
-            variant="outlined"
-            value={workflowName}
-            onChange={(e) => setWorkflowName(e.target.value)}
-          />
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1, minWidth: '400px' }}>
+            <TextField
+              autoFocus
+              label="Workflow Name"
+              value={workflowName}
+              onChange={(e) => setWorkflowName(e.target.value)}
+              fullWidth
+            />
+            {/* <TextField
+              label="Description"
+              value={workflowDescription}
+              onChange={(e) => setWorkflowDescription(e.target.value)}
+              multiline
+              rows={4}
+              fullWidth
+            /> */}
+          </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setSaveDialogOpen(false)}>Cancel</Button>
-          <Button onClick={saveWorkflow} variant="contained" color="primary">Save</Button>
+          <Button onClick={saveWorkflow} variant="contained">Save</Button>
         </DialogActions>
       </Dialog>
-    </Box>
-  );
-};
-
-// Wrap the main component with ReactFlowProvider
-const WorkflowCreation = () => {
-  return (
-    <Box sx={{ 
-      height: 'calc(100vh - 64px)', // Adjust this if your header height is different
-      width: '100%',
-      // display: 'flex',
-      // flexDirection: 'column'
-    }}>
-      <ReactFlowProvider>
-        <WorkflowCreationContent />
-      </ReactFlowProvider>
     </Box>
   );
 };

@@ -47,6 +47,17 @@ public class WorkflowService {
                 }
                 step.setWorkflowId(workflow.getId());
                 step.setUpdatedAt(now);
+                // Add task processing logic here
+                if (step.getTasks() != null && !step.getTasks().isEmpty()) {
+                    step.getTasks().forEach(task -> {
+                        if (task.getId() == null || task.getId().isEmpty()) {
+                            task.setId(UUID.randomUUID().toString());
+                        }
+                        task.setStepId(step.getId());
+                        task.setCreatedAt(now);
+                        task.setUpdatedAt(now);
+                });
+            }
             });
         }
         
