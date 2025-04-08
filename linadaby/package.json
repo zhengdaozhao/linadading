@@ -15,7 +15,7 @@
     "@mui/icons-material": "^7.0.1",
     "@mui/material": "^7.0.1",
     "@xyflow/react": "^12.4.4",
-    "antd": "^5.24.4",
+    "antd": "^5.24.6",
     "axios": "^1.8.4",
     "linadaby": "file:",
     "react": "^19.0.0",
