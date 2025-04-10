@@ -10,7 +10,10 @@ import {
   MarkerType
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { Box, Button, Typography, TextField, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { Box, Button, Typography, TextField, 
+  Dialog, DialogTitle, DialogContent, DialogActions,
+  Snackbar, Alert
+ } from '@mui/material';
 import { v4 as uuidv4 } from 'uuid';
 
 import WorkflowSidebar from '../components/workflow/WorkflowSidebar';
@@ -35,11 +38,13 @@ const WorkflowCreation = () => {
   const [templates, setTemplates] = useState([]);
   const [workflows, setWorkflows] = useState([]);
   const [stepCounter, setStepCounter] = useState(1);
-  const [taskCounters, setTaskCounters] = useState({});
+  // const [taskCounters, setTaskCounters] = useState({});
   const [selectedTask, setSelectedTask] = useState(null);
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [workflowName, setWorkflowName] = useState('New Workflow');
+  // 2025/4/9 Add a state variable to track if a workflow is loaded
+  const [isWorkflowLoaded, setIsWorkflowLoaded] = useState(false);
 
 // 20250403 Add this state variable
   const [globalTaskCounter, setGlobalTaskCounter] = useState(1);
@@ -48,7 +53,30 @@ const WorkflowCreation = () => {
   
   const reactFlowWrapper = useRef(null);
   const reactFlowInstance = useRef(null);
-  
+
+  // 在组件内部添加状态
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success' // 'error', 'warning', 'info', 'success'
+  });
+
+  // 替换 message.success 和 message.error
+  const showSuccess = (msg) => {
+    setSnackbar({
+      open: true,
+      message: msg,
+      severity: 'success'
+    });
+  };
+
+  const showError = (msg) => {
+    setSnackbar({
+      open: true,
+      message: msg,
+      severity: 'error'
+    });
+  };
   // Load templates and workflows
   useEffect(() => {
     const fetchData = async () => {
@@ -153,6 +181,7 @@ const WorkflowCreation = () => {
         else if (data.type === 'workflow') {
           // Load an existing workflow
           loadWorkflow(data.item);
+          setIsWorkflowLoaded(true); // Set the state to indicate a workflow is loaded
           return;
         }
         
@@ -166,6 +195,136 @@ const WorkflowCreation = () => {
     },
     [reactFlowInstance, stepCounter, globalTaskCounter]
   );
+  // Add the updateWorkflow function
+  const updateWorkflow = async () => {
+    if (!workflowName.trim()) {
+      alert('Please enter a workflow name');
+      return;
+    }
+
+    try {
+      // Extract steps and branches from nodes
+      const steps = [];
+      const branches = [];
+      
+      nodes.forEach(node => {
+        // Get node position for restoring layout
+        const nodePosition = { x: node.position.x, y: node.position.y };
+        
+        if (node.type === 'step') {
+          // Process step nodes
+          const step = {
+            id: node.id,
+            label: node.data.label,
+            templateId: node.data.templateId,
+            templateName: node.data.templateName,
+            innerNodes: node.data.innerNodes,
+            assignTo: node.data.assignTo || '',
+            status: node.data.status || 'PENDING',
+            position: nodePosition,
+            tasks: node.data.tasks || [],
+            upperStep: null,
+            nextStep: null
+          };
+          steps.push(step);
+        } else if (node.type === 'branch') {
+          // Process branch nodes
+          const branch = {
+            id: node.id,
+            label: node.data.label,
+            condition: node.data.condition,
+            position: nodePosition,
+            upperStep: null,
+            nextStep: null,
+            rightStep: null
+          };
+          branches.push(branch);
+        }
+      });
+      
+      // Process connections from edges
+      edges.forEach(edge => {
+        const sourceNode = nodes.find(n => n.id === edge.source);
+        const targetNode = nodes.find(n => n.id === edge.target);
+        
+        if (sourceNode && targetNode) {
+          if (sourceNode.type === 'step') {
+            // Step to any node
+            const step = steps.find(s => s.id === sourceNode.id);
+            if (step) {
+              step.nextStep = targetNode.id;
+            }
+          } else if (sourceNode.type === 'branch') {
+            // Branch to any node
+            const branch = branches.find(b => b.id === sourceNode.id);
+            if (branch) {
+              if (edge.sourceHandle === 'bottom') {
+                branch.nextStep = targetNode.id;
+              } else if (edge.sourceHandle === 'right') {
+                branch.rightStep = targetNode.id;
+              } else {
+                branch.nextStep = targetNode.id;
+              }
+            }
+          }
+          
+          if (targetNode.type === 'step') {
+            // Any node to step
+            const step = steps.find(s => s.id === targetNode.id);
+            if (step) {
+              step.upperStep = sourceNode.id;
+            }
+          } else if (targetNode.type === 'branch') {
+            // Any node to branch
+            const branch = branches.find(b => b.id === targetNode.id);
+            if (branch) {
+              branch.upperStep = sourceNode.id;
+            }
+          }
+        }
+      });
+      
+      // Create workflow object
+      const workflow = {
+        id: workflows.find(w => w.name === workflowName)?.id, // Assuming workflowName is unique
+        name: workflowName,
+        status: 'ACTIVE',
+        steps: steps,
+        branches: branches
+      };
+      
+      // Update to backend
+      const updatedWorkflow = await workflowService.updateWorkflow(workflow.id, workflow);
+      console.log('Workflow updated:', updatedWorkflow);
+      showSuccess('Workflow updated successfully!');
+      
+      // Hide the update button
+      setIsWorkflowLoaded(false);
+
+      // Update workflows list
+      const updatedWorkflows = await workflowService.getAllWorkflows();
+      setWorkflows(updatedWorkflows);
+
+      // Clear the canvas after updating
+      setNodes([]);
+      setEdges([]);
+      setWorkflowName('');
+      setStepCounter(1);
+      // setTaskCounters({});
+      setGlobalTaskCounter(1);
+      setIsWorkflowLoaded(false);
+
+      // Close dialog
+      setSaveDialogOpen(false);
+      setWorkflowName('');
+      
+      // alert('Workflow updated successfully!');
+    } catch (error) {
+      console.error('Error updating workflow:', error);
+      // alert('Error updating workflow. Please try again.');
+      showError('Error updating workflow. Please try again.');
+    }
+  };
   
   const handleStepUpdate = (stepId, updatedStep) => {
     // updateGlobalTaskCounter(globalTaskCounter+1);
@@ -238,12 +397,14 @@ const WorkflowCreation = () => {
     try {
       await workflowService.deleteWorkflow(workflowId);
       console.log(`Workflow ${workflowId} deleted successfully`);
+      showSuccess('Workflow deleted successfully!');
 
       // Refresh workflows list
       const workflowsData = await workflowService.getAllWorkflows();
       setWorkflows(workflowsData);
     } catch (error) {
       console.error('Error deleting workflow:', error);
+      showError('Error deleting workflow. Please check it up.');
     }
   };
   // 2025/4/3 Add this function to update the global task counter
@@ -340,6 +501,7 @@ const WorkflowCreation = () => {
     const newNodes = [];
     const newEdges = [];
     let maxStepNumber = 0;
+    let maxTaskNumber = 0;
     
     // Add step nodes
     if (workflow.steps && workflow.steps.length > 0) {
@@ -355,7 +517,7 @@ const WorkflowCreation = () => {
         
         // Process tasks for this step
         const tasks = step.tasks || [];
-        let maxTaskNumber = 0;
+        // let maxTaskNumber = 0;
         
         // Update task counters based on task names
         tasks.forEach(task => {
@@ -381,15 +543,16 @@ const WorkflowCreation = () => {
             onTaskReorder: handleTaskReorder,
             // 2025/4/3 add for task counter golbalization
             globalTaskCounter: globalTaskCounter,
+            // globalTaskCounter: maxTaskNumber+1,
             updateGlobalTaskCounter: updateGlobalTaskCounter
           }
         });
         
         // Update task counter for this step
-        setTaskCounters(prev => ({
-          ...prev,
-          [step.id]: maxTaskNumber + 1
-        }));
+        // setTaskCounters(prev => ({
+        //   ...prev,
+        //   [step.id]: maxTaskNumber + 1
+        // }));
 
         // Create edges based on connections
         if (step.nextStep) {
@@ -450,6 +613,7 @@ const WorkflowCreation = () => {
     setNodes(newNodes);
     setEdges(newEdges);
     setStepCounter(maxStepNumber + 1);
+    updateGlobalTaskCounter(maxTaskNumber + 1);
   };
   
   const handleSaveWorkflow = () => {
@@ -595,12 +759,21 @@ const WorkflowCreation = () => {
       
       // Save to backend
       const savedWorkflow = await workflowService.saveWorkflow(workflow);
-      console.log('Workflow saved:', savedWorkflow);
+      // console.log('Workflow saved:', savedWorkflow);
+      showSuccess('Workflow saved successfully!');
       
       // Update workflows list
       const updatedWorkflows = await workflowService.getAllWorkflows();
       setWorkflows(updatedWorkflows);
       
+      //2025/4/9 add Clear the canvas after saving
+      setNodes([]);
+      setEdges([]);
+      setWorkflowName('');
+      setStepCounter(1);
+      // setTaskCounters({});
+      setGlobalTaskCounter(1);
+
       // Close dialog
       setSaveDialogOpen(false);
       setWorkflowName('');
@@ -608,7 +781,8 @@ const WorkflowCreation = () => {
       // alert('Workflow saved successfully!');
     } catch (error) {
       console.error('Error saving workflow:', error);
-      alert('Error saving workflow. Please try again.');
+      // alert('Error saving workflow. Please try again.');
+      showError('Error saving workflow. Please try again.');
     }
 
 
@@ -616,6 +790,24 @@ const WorkflowCreation = () => {
   
   return (
     <Box sx={{ display: 'flex', height: 'calc(100vh - 64px)' }}>
+
+      {/* // 在 JSX 中添加 Snackbar */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={1000}
+        onClose={() => setSnackbar({...snackbar, open: false})}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }} // 这里设置显示在上方居中
+        >
+        <Alert 
+          onClose={() => setSnackbar({...snackbar, open: false})} 
+          severity={snackbar.severity}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+
+
+
       <WorkflowSidebar 
         templates={templates} 
         workflows={workflows} 
@@ -639,6 +831,40 @@ const WorkflowCreation = () => {
         >
           <Background />
           <Controls />
+
+          {/* 2025/4/9 add Clear the canvas button */}
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={() => {
+              setNodes([]);
+              setEdges([]);
+              setWorkflowName('');
+              setStepCounter(1);
+              // setTaskCounters({});
+              setGlobalTaskCounter(1);
+              setIsWorkflowLoaded(false); // Reset the workflow loaded state
+            }}
+            sx={{ position: 'absolute', top: 16, left: 16, zIndex: 10 }}
+          >
+            Clear Canvas
+          </Button>
+
+        {/* Update Workflow button */}
+        {/* Wrapper for buttons in top-right corner */}
+        <Box sx={{ position: 'absolute', top: 16, right: 1, zIndex: 10, display: 'flex', gap: 2 }}>
+          {/* Update Workflow button */}
+          {isWorkflowLoaded && (
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={updateWorkflow}
+            >
+              Update Workflow
+            </Button>
+          )}
+        </Box>
+
         </ReactFlow>
       </Box>
       

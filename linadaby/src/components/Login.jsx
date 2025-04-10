@@ -15,6 +15,7 @@ const Login = ({ onLogin }) => {
             const response = await AuthService.login(mail, password);
             if (response.status === 200) {
                 // 只调用onLogin，不再自己导航
+                localStorage.setItem('zpddyzUser', JSON.stringify(response.data));
                 onLogin();
             }
         } catch (error) {

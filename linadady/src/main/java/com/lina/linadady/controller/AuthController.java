@@ -27,20 +27,22 @@ public class AuthController {
 
     @PostMapping("/signup")
     public ResponseEntity<String> signup(@RequestBody User user) {
-        logger.info("info of signup:"+user.getMail());
+        logger.info("info of signup:"+user.getMail()); 
+        logger.info("is manager?:"+user.isManager()); 
         userService.register(user);
         return ResponseEntity.ok("User registered successfully");
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody User user) {
+    public ResponseEntity<User> login(@RequestBody User user) {
         logger.info("info of login:"+ user.getMail());
         User foundUser = userService.findByMail(user.getMail());
         if (foundUser != null && userService.isPasswordValid(user.getPassword(), foundUser.getPassword())) {
             logger.info("search result:"+ foundUser.getPassword());
             logger.info("Password matches");
-            return ResponseEntity.ok("Login successful");
+            return ResponseEntity.ok(foundUser);
         }
-        return ResponseEntity.status(401).body("Invalid credentials");
+        // return ResponseEntity.status(401).body("Invalid credentials");
+        return ResponseEntity.status(401).body(null);
     }
 }

@@ -182,6 +182,8 @@ const StepNode = ({ data, id}) => {
             name: `Task ${taskNumber}`,
             description: '',
             stepId: id,
+            assignTeam: '',
+            status: 'Not Assigned',
             templateId: dragData.item.id,
             innerNodes: dragData.item.innerNodes ? [...dragData.item.innerNodes] : [],
             createdAt: new Date().toISOString(),

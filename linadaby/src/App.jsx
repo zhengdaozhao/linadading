@@ -32,22 +32,26 @@ const RootLayout = () => {
   const menuItems = [
     {
       key: '/template-design',
-      label: '任务模板设计',
+      // label: '任务模板设计',
+      label: 'Task Template Design',
       onClick: () => handleMenuClick('/template-design')
     },
     {
       key: '/workflow-creation',
-      label: '工作流程做成',
+      // label: '工作流程做成',
+      label: 'Workflow Generation',
       onClick: () => handleMenuClick('/workflow-creation')
     },
     {
       key: '/task-assignment',
-      label: '任务分配与追踪',
+      // label: '任务分配与追踪',
+      label: 'Task Assign & Track',
       onClick: () => handleMenuClick('/task-assignment')
     },
     {
       key: '/task-processing',
-      label: '任务处理',
+      // label: '任务处理',
+      label: 'Task Process',
       onClick: () => handleMenuClick('/task-processing')
     },
     // {
@@ -99,7 +103,7 @@ const RootLayout = () => {
             Logout
           </Button>
         </Header>
-        <Content style={{ padding: '0 50px', marginTop: 64 }}>
+        <Content style={{ padding: '0 50px', marginTop: 15 }}>
           <Outlet />
         </Content>
       </Layout>
@@ -126,6 +130,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = useCallback(() => {
     localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('zpddyzUser');
     setIsLoggedIn(false);
   }, []);
 
