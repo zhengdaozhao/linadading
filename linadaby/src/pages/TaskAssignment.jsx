@@ -141,6 +141,7 @@ const TaskAssignment = () => {
               <TableCell>Assign Team</TableCell>
               <TableCell>Status</TableCell>
               <TableCell>Step ID</TableCell>
+              <TableCell>Template ID</TableCell>
               <TableCell>Action</TableCell>
             </TableRow>
           </TableHead>
@@ -152,6 +153,7 @@ const TaskAssignment = () => {
                 <TableCell>{task.assignTeam}</TableCell>
                 <TableCell>{task.status}</TableCell>
                 <TableCell>{task.stepId}</TableCell>
+                <TableCell>{task.templateId}</TableCell>
                 <TableCell>
                   {!task.assignTeam && user.isManager && (
                     <Button variant="outlined" color="primary" onClick={() => handleUpdateTask(task)}>

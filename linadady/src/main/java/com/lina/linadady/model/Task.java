@@ -21,6 +21,7 @@ public class Task {
     private String stepId;
     private String assignTeam;
     private String status;
+    private String templateId;
     private List<InnerNode> innerNodes;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
