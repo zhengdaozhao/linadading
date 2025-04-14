@@ -108,7 +108,7 @@ const TemplateItem = ({ template, onDragStart, onDelete }) => {
 const Sidebar = ({ savedTemplates, onDeleteTemplate, isLoading }) => {
   return (
     <div className="sidebar">
-      <h3>Base Components</h3>
+      <h3>Base Node</h3>
       <div className="sidebar-section">
         <DraggableItem type="text" label="Text Field" />
         <DraggableItem type="email" label="Email Field" />
@@ -118,7 +118,7 @@ const Sidebar = ({ savedTemplates, onDeleteTemplate, isLoading }) => {
         <DraggableItem type="date" label="Date Picker" />
       </div>
       
-      <h3>Containers</h3>
+      <h3>Container</h3>
       <div className="sidebar-section">
         <DraggableItem type="container" label="Container" />
       </div>

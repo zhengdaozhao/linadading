@@ -18,6 +18,7 @@ public class Workflow {
     private String id;
     private String name;
     private String status;
+    private String activeStep;
     private List<Step> steps;
     private List<Branch> branches;
     private LocalDateTime createdAt;

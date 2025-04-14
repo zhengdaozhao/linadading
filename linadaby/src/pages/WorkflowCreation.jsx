@@ -141,7 +141,8 @@ const WorkflowCreation = () => {
           // Create a new step node
           const stepId = `step-${uuidv4()}`;
           const stepLabel = `STEP ${stepCounter}`;
-          
+          const status = stepLabel === 'STEP 1' ? 'Active' : 'Locked'; // Set status based on label
+        
           newNode = {
             id: stepId,
             type: 'step',
@@ -149,6 +150,7 @@ const WorkflowCreation = () => {
             data: {
               label: stepLabel,
               tasks: [],
+              status:status,
               onStepUpdate: handleStepUpdate,
               onTaskClick: handleTaskClick,
               onTaskReorder: handleTaskReorder,
@@ -531,6 +533,7 @@ const WorkflowCreation = () => {
         });
         
         // Create step node
+        const status = step.label === 'STEP 1' ? 'Active' : 'Locked'; // Set status based on label
         newNodes.push({
           id: step.id,
           type: 'step',
@@ -538,6 +541,7 @@ const WorkflowCreation = () => {
           data: {
             label: step.label,
             tasks: tasks,
+            status: status, // Add status field
             onStepUpdate: handleStepUpdate,
             onTaskClick: handleTaskClick,
             onTaskReorder: handleTaskReorder,
@@ -666,6 +670,12 @@ const WorkflowCreation = () => {
       alert('Please enter a workflow name');
       return;
     }
+    // Check if there are no nodes on the canvas
+    if (nodes.length === 0) {
+      showError('No nodes exist on canvas');
+      setSaveDialogOpen(false); // Close the save dialog
+      return;
+    }
     
     try {
       // Extract steps and branches from nodes
@@ -754,7 +764,9 @@ const WorkflowCreation = () => {
         name: workflowName,
         status: 'ACTIVE',
         steps: steps,
-        branches: branches
+        branches: branches,
+        // 2025/4/11 add
+        activeStep:'Step 1'
       };
       
       // Save to backend
@@ -831,6 +843,28 @@ const WorkflowCreation = () => {
         >
           <Background />
           <Controls />
+          {/* Background hint */}
+          <div 
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              color: '#98817b',
+              fontSize: '26px',
+              textAlign: 'center',
+              pointerEvents: 'none', // Ensure the hint does not interfere with drag and drop
+              zIndex: 1,
+              opacity: nodes.length === 0 ? 1 : 0, // Show only if there are no nodes
+              transition: 'opacity 0.3s ease',
+              padding: '20px',
+              backgroundColor: 'rgba(255, 255, 255, 0.8)',
+              borderRadius: '8px',
+              boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
+            }}
+          >
+            drag a task template into the step node to create a step, you can also drag branch onto the canvas, at last you can save as a workflow with the button at the bottom of sidebar
+          </div>
 
           {/* 2025/4/9 add Clear the canvas button */}
           <Button

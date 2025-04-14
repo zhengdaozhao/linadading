@@ -1,10 +1,14 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { useDrop } from 'react-dnd';
 import { Button } from 'antd';
 import './ContainerNode.css';
+import TemplateService from '../../services/templateService';
 
 const ContainerNode = ({ id, data, selected, isConnectable }) => {
+  const [isSavedTemplate, setIsSavedTemplate] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
   // Set up drop target for inner nodes
   const [{ isOver }, drop] = useDrop(() => ({
     accept: 'FIELD',
@@ -17,7 +21,8 @@ const ContainerNode = ({ id, data, selected, isConnectable }) => {
       isOver: !!monitor.isOver() && !monitor.didDrop(),
     }),
   }));
-    // Add this click handler to the inner nodes
+
+  // Add this click handler to the inner nodes
   const handleInnerNodeClick = (e, nodeData) => {
     e.stopPropagation(); // Prevent container selection
     if (data.onSelectInnerNode) {
@@ -25,14 +30,70 @@ const ContainerNode = ({ id, data, selected, isConnectable }) => {
     }
   };
 
-  const handleSaveContainer = () => {
-    console.log(`Attempting to save container ${id}`);
-    if (data.onSaveContainer) {
+  const handleSaveOrUpdateContainer = () => {
+    console.log(`Attempting to ${isSavedTemplate ? 'update' : 'save'} container ${id}`);
+    if (isSavedTemplate && data.onUpdateContainer) {
+      data.onUpdateContainer(id);
+    } else if (!isSavedTemplate && data.onSaveContainer) {
       data.onSaveContainer(id);
     } else {
-      console.error('onSaveContainer is not defined');
+      console.error('onSaveContainer or onUpdateContainer is not defined');
     }
   };
+
+  // Fetch template data to determine if it's a saved template
+  useEffect(() => {
+    const fetchTemplate = async () => {
+      setIsLoading(true);
+      try {
+        const template = await TemplateService.getTemplateById(id);
+        setIsSavedTemplate(!!template);
+      } catch (error) {
+        console.error('Failed to fetch template:', error);
+        setIsSavedTemplate(false);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchTemplate();
+    } else {
+      setIsLoading(false);
+      setIsSavedTemplate(false);
+    }
+  }, [id]);
+
+  if (isLoading) {
+    return (
+      <div 
+        className={`container-node ${selected ? 'selected' : ''} ${isOver ? 'drop-target' : ''}`}
+        ref={drop}
+      >
+        <Handle
+          type="target"
+          position={Position.Top}
+          isConnectable={isConnectable}
+          className="handle handle-top"
+        />
+        
+        <div className="title">{data.label}</div>
+        
+        <div className="inner-nodes">
+          <div className="empty-container-message">
+            Loading...
+          </div>
+        </div>
+        
+        <Handle
+          type="source"
+          position={Position.Bottom}
+          isConnectable={isConnectable}
+          className="handle handle-bottom"
+        />
+      </div>
+    );
+  }
 
   return (
     <div 
@@ -56,41 +117,23 @@ const ContainerNode = ({ id, data, selected, isConnectable }) => {
                 className="inner-node"
                 onClick={(e) => handleInnerNodeClick(e, node)}
                 >
-              {/* <div className="field-item">
-                <div className="field-label">
-                  {node.data.label}
-                </div>
-                <div className="field-preview">
-                  {renderFieldPreview(node.data.nodeType)}
-                </div>
-              </div> */}
               <div className="field-item">
                 <div className="field-label" style={{color:'red'}}>
                   {node.data?.label || 'Unnamed Field'}
                 </div>
-                {/* <div className="field-type">
-                  {node.data?.nodeType || 'Unknown Type'}
-                </div> */}
                 <div className="field-details">
-                  {/* {node.data.fields && node.data.fields.map(field => ( */}
-                  {/* {node.data?.fields?.map(field => (
-                    <div key={field.id} className="inner-field">
-                      {field.label} {field.required && <span className="required">*</span>}
+                  {node.data.fields && ( 
+                    <div>
+                      {node.data.fields}
                     </div>
-                  ))} */}
+                  ) }
+                  {!node.data.fields && (
+                    <div className="field-preview">
+                      {renderFieldPreview(node.data.nodeType)}
+                    </div>
+                  )}
                 </div>
-                {node.data.fields && ( 
-                  <div>
-                    {node.data.fields}
-                  </div>
-                ) }
-                {!node.data.fields && (
-                  <div className="field-preview">
-                    {renderFieldPreview(node.data.nodeType)}
-                  </div>
-                )}
-             </div>
-
+              </div>
             </div>
           ))
         ) : (
@@ -104,15 +147,12 @@ const ContainerNode = ({ id, data, selected, isConnectable }) => {
         <Button 
           className="save-container" 
           onClick={(e) => {
-            // 20250327 tabnine tell me to add
             e.preventDefault();  // Prevent default behavior
             e.stopPropagation();  // This stops the event from bubbling up
-            console.log(`志萍大腚 save container ${id}`);
-            data.onSaveContainer(id);
+            handleSaveOrUpdateContainer();
           }}
-          // onClick={handleSaveContainer}
         >
-          Save as Template
+          {isSavedTemplate ? 'Update Template' : 'Save as Template'}
         </Button>
       )}
       

@@ -27,8 +27,9 @@ public class TemplateService {
     }
     
     public Template getTemplateById(String id) {
-        return templateRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Template not found"));
+        // return templateRepository.findById(id)
+        //         .orElseThrow(() -> new RuntimeException("Template not found"));
+        return templateRepository.findById(id).orElse(null);
     }
     
     public Template saveTemplate(Template template) {

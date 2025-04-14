@@ -809,6 +809,51 @@ const handleUpdateNode = useCallback((updatedNode) => {
     }
   }, []);
 
+  // Add handleUpdateContainer
+  const handleUpdateContainer = useCallback(async (containerId) => {
+    setNodes(currentNodes => {
+      const containerNode = currentNodes.find(n => n.id === containerId);
+      if (containerNode && containerNode.data.innerNodes) {
+        setIsLoading(true);
+        
+        const updatedTemplate = {
+          id: containerId,
+          label: `${containerNode.data.label}`,
+          nodeType: 'container',
+          innerNodes: containerNode.data.innerNodes.map(innerNode => ({
+            id: innerNode.id,
+            data: {
+              label: innerNode.data.label,
+              nodeType: innerNode.data.nodeType,
+              fields: innerNode.data.fields // Ensure fields are set
+            }
+          })),
+          updatedAt: new Date().toISOString()
+        };
+        
+        // Update to backend
+        TemplateService.updateTemplate(containerId,updatedTemplate)
+          .then(updatedTemplate => {
+            // Update local state with the updated template
+            setSavedTemplates(prev => {
+              return prev.map(t => (t.id === updatedTemplate.id ? updatedTemplate : t));
+            });
+            message.success(`Template "${updatedTemplate.label}" updated successfully!`);
+            // Clear the canvas
+            setNodes([]);
+            setEdges([]);
+          })
+          .catch(error => {
+            message.error('Failed to update template to server');
+            console.error('Error updating template:', error);
+          })
+          .finally(() => {
+            setIsLoading(false);
+          });
+      }
+      return currentNodes; // Return the current nodes state unchanged
+    });
+  }, []);
 
   // Set up the drop target for the canvas
   const [{ isOver }, drop] = useDrop(() => ({
@@ -852,7 +897,8 @@ const handleUpdateNode = useCallback((updatedNode) => {
         const template = savedTemplates.find(t => t.id === item.templateId);
         if (template) {
           newNode = {
-            id: getId(),
+            // id: getId(),
+            id: template.id,
             type: 'container',
             position: { 
               x: position.x - canvasRect.left - 150,
@@ -861,42 +907,80 @@ const handleUpdateNode = useCallback((updatedNode) => {
             data: { 
               label: template.label,
               nodeType: 'container',
-              // innerNodes: template.innerNodes,
-              // 20250327 change to solve template re-render on canvas
-              innerNodes: template.innerNodes.map(innerNode => ({
-                ...innerNode,
-                id: `inner_${getId()}` // Ensure unique IDs for inner nodes
-              })),
+              innerNodes: template.innerNodes,
+              // // 20250327 change to solve template re-render on canvas
+              // innerNodes: template.innerNodes.map(innerNode => ({
+              //   ...innerNode,
+              //   id: `inner_${getId()}` // Ensure unique IDs for inner nodes
+              // })),
               onDropToContainer: handleDropToContainer,
               onSaveContainer: handleSaveContainer,
+              onUpdateContainer: handleUpdateContainer, // Add this line
               onSelectInnerNode: handleSelectInnerNode // Add this line
             }
           };
         }
+      // } else {
+      //   // Create a regular field node
+      //   newNode = {
+      //     id: getId(),
+      //     type: 'custom',
+      //     position: { 
+      //       x: position.x - canvasRect.left - 75,
+      //       y: position.y - canvasRect.top - 20
+      //     },
+      //     data: { 
+      //       label: `${item.type} Field`,
+      //       nodeType: item.type,
+      //       fields: [
+      //         {
+      //           id: `${item.type}-${Date.now()}`,
+      //           type: item.type,
+      //           label: item.label || `${item.type} Field`,
+      //           required: false
+      //         }
+      //       ]
+      //     }
+      //   };
+      // }
       } else {
-        // Create a regular field node
-        newNode = {
-          id: getId(),
-          type: 'custom',
-          position: { 
-            x: position.x - canvasRect.left - 75,
-            y: position.y - canvasRect.top - 20
-          },
-          data: { 
-            label: `${item.type} Field`,
-            nodeType: item.type,
-            fields: [
-              {
-                id: `${item.type}-${Date.now()}`,
-                type: item.type,
-                label: item.label || `${item.type} Field`,
-                required: false
-              }
-            ]
-          }
-        };
-      }
-      
+        // Check if the drop target is a container
+        const targetNode = nodes.find(node => 
+          node.position.x <= position.x && 
+          node.position.x + 300 >= position.x && // Adjust width as needed
+          node.position.y <= position.y && 
+          node.position.y + 200 >= position.y && // Adjust height as needed
+          node.type === 'container'
+        );
+
+        if (targetNode) {
+          // Create a regular field node
+          newNode = {
+            id: `inner_${getId()}`,
+            type: 'custom',
+            position: { 
+              x: position.x - canvasRect.left - 75,
+              y: position.y - canvasRect.top - 20
+            },
+            data: { 
+              label: `${item.type} Field`,
+              nodeType: item.type,
+              fields: [
+                {
+                  id: `${item.type}-${Date.now()}`,
+                  type: item.type,
+                  label: item.label || `${item.type} Field`,
+                  required: false
+                }
+              ]
+            }
+          };
+
+          // Add the new node to the container's innerNodes
+          handleDropToContainer(targetNode.id, item, monitor);
+          return;
+        }
+      }      
       if (newNode) {
         setNodes((nds) => [...nds, newNode]);
       }
@@ -905,6 +989,7 @@ const handleUpdateNode = useCallback((updatedNode) => {
       isOver: !!monitor.isOver() && !monitor.didDrop(),
     }),
   }), [setNodes, savedTemplates, handleDropToContainer, handleSaveContainer,containerCount]);
+
   // Add this function to handle inner node selection
   const handleSelectInnerNode = useCallback((innerNode) => {
     setSelectedNode(innerNode);
@@ -922,8 +1007,33 @@ const handleUpdateNode = useCallback((updatedNode) => {
         id="flow-canvas"
         ref={drop} 
         className={`flow-canvas ${isOver ? 'drop-target' : ''}`}
+      // >
+      style={{
+        position: 'relative',
+        width: '100%', 
+        height: '600px',
+        border: isOver ? '2px dashed #1a192b' : '1px solid #eee',
+        borderRadius: '4px',
+      }}
+    >
+      <div 
+        style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          color: '#98817b',
+          fontSize: '36px',
+          textAlign: 'center',
+          pointerEvents: 'none', // Ensure the hint does not interfere with drag and drop
+          zIndex: 1,
+          opacity: nodes.length === 0 ? 1 : 0, // Show only if there are no nodes
+          transition: 'opacity 0.3s ease',
+        }}
       >
-        <ReactFlow
+        drag the base node into container to create a task template
+      </div>
+      <ReactFlow
           nodes={nodes}
           edges={edges}
           onNodesChange={onNodesChange}
