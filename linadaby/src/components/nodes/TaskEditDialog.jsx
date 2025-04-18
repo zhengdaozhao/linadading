@@ -19,7 +19,7 @@ import {
 const statusOptions = [
   'Not Assigned',
   'Assigned',
-  'In progress',
+  'In Progress',
   'Pending',
   'Done',
   'Rejected'

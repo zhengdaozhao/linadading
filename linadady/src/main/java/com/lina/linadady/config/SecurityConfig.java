@@ -21,7 +21,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**",
                         "/api/templates/**", 
                         "/api/workflows/**",
-                        "/api/tasks/**"
+                        "/api/tasks/**",
+                        "/api/steps/**"
                         ).permitAll()
                 .anyRequest().authenticated())
             .build();

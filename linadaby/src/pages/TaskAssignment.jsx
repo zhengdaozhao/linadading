@@ -18,10 +18,12 @@ import {
   DialogActions, 
   Snackbar, 
   Alert,
+  FormControl,
+  InputLabel,
   Typography
 } from '@mui/material';
-import TaskService from '../services/taskService';
-
+import TaskService from '../services/TaskService';
+import { Link as RouterLink } from 'react-router-dom';
 const TaskAssignment = () => {
   const [taskId, setTaskId] = useState('');
   const [status, setStatus] = useState('');
@@ -106,7 +108,7 @@ const TaskAssignment = () => {
           value={taskId}
           onChange={(e) => setTaskId(e.target.value)}
         />
-        <Select
+        {/* <Select
           label="Status"
           value={status}
           onChange={(e) => setStatus(e.target.value)}
@@ -117,11 +119,35 @@ const TaskAssignment = () => {
           </MenuItem>
           <MenuItem value="Not Assigned">Not Assigned</MenuItem>
           <MenuItem value="Assigned">Assigned</MenuItem>
-          <MenuItem value="In progress">In progress</MenuItem>
+          <MenuItem value="In Progress">In Progress</MenuItem>
           <MenuItem value="Pending">Pending</MenuItem>
           <MenuItem value="Done">Done</MenuItem>
           <MenuItem value="Rejected">Rejected</MenuItem>
-        </Select>
+        </Select> */}
+<FormControl sx={{  minWidth: 120, mr: 2 }} size="basic">
+  <InputLabel id="status-label" htmlFor="status-select" shrink>
+    Status
+  </InputLabel>
+  <Select
+    labelId="status-label"
+    id="status-select"
+    label="Status"
+    value={status}
+    onChange={(e) => setStatus(e.target.value)}
+    displayEmpty
+  >
+    <MenuItem value="">
+      <em>None</em>
+    </MenuItem>
+    <MenuItem value="Not Assigned">Not Assigned</MenuItem>
+    <MenuItem value="Assigned">Assigned</MenuItem>
+    <MenuItem value="In Progress">In Progress</MenuItem>
+    <MenuItem value="Pending">Pending</MenuItem>
+    <MenuItem value="Done">Done</MenuItem>
+    <MenuItem value="Rejected">Rejected</MenuItem>
+  </Select>
+</FormControl>
+
         <TextField
           label="Assigned Staff Name"
           value={assignedStaffName}
@@ -152,8 +178,11 @@ const TaskAssignment = () => {
                 <TableCell>{task.name}</TableCell>
                 <TableCell>{task.assignTeam}</TableCell>
                 <TableCell>{task.status}</TableCell>
-                <TableCell>{task.stepId}</TableCell>
-                <TableCell>{task.templateId}</TableCell>
+                <TableCell>
+  {task.assignTeam
+    ? <RouterLink to={`/task-processing/${task.stepId}`}>{task.stepId}</RouterLink>
+    : task.stepId}
+</TableCell>                <TableCell>{task.templateId}</TableCell>
                 <TableCell>
                   {!task.assignTeam && user.isManager && (
                     <Button variant="outlined" color="primary" onClick={() => handleUpdateTask(task)}>

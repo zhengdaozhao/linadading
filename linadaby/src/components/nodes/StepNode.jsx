@@ -25,14 +25,14 @@ const StepNode = ({ data, id }) => {
       const emailNode = task.innerNodes.find(node =>
         node.data && node.data.field === 'email');
       if (emailNode && emailNode.data) {
-        assignTeam = emailNode.data.value || '';
+        assignTeam = emailNode.data.fields || '';
       }
 
       // Find status field in innerNodes
       const statusNode = task.innerNodes.find(node =>
         node.data && node.data.field === 'status');
       if (statusNode && statusNode.data) {
-        status = statusNode.data.value || 'Not Assigned';
+        status = statusNode.data.fields || 'Not Assigned';
       }
     }
 
@@ -140,16 +140,20 @@ const StepNode = ({ data, id }) => {
 
     switch (status) {
       case 'Active':
-        icon = <div style={{ backgroundColor: 'green', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>◉</div>;
+        icon = <div style={{ backgroundColor: 'red', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'red' }}>◉</div>;
         tooltipTitle = 'Active';
         break;
-      case 'Locked':
-        icon = <div style={{ backgroundColor: 'lightgray', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>◉</div>;
-        tooltipTitle = 'Locked';
+      case 'Waiting':
+        icon = <div style={{ backgroundColor: 'blue', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'blue' }}>◉</div>;
+        tooltipTitle = 'Waiting';
         break;
       case 'Completed':
-        icon = <div style={{ backgroundColor: 'yellow', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'black' }}>◉</div>;
+        icon = <div style={{ backgroundColor: 'green', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'green' }}>◉</div>;
         tooltipTitle = 'Completed';
+        break;
+      case 'Skipped':
+        icon = <div style={{ backgroundColor: 'lightgray', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'lightgray' }}>◉</div>;
+        tooltipTitle = 'Skipped';
         break;
       default:
         icon = null;

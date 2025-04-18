@@ -6,7 +6,7 @@ import PlaylistAddCheckCircleIcon from '@mui/icons-material/PlaylistAddCheckCirc
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import DeleteIcon from '@mui/icons-material/Delete';
 
-const WorkflowSidebar = ({ templates, workflows, onSaveClick, onDeleteWorkflow  }) => {
+const WorkflowSidebar = ({ templates, workflows, onSaveClick, onDeleteWorkflow, isWorkflowLoaded, hasNodes  }) => {
   const onDragStart = (event, type, item) => {
     try {
       // Create a clean copy of the item
@@ -30,7 +30,7 @@ const WorkflowSidebar = ({ templates, workflows, onSaveClick, onDeleteWorkflow  
   };
 
   return (
-    <Box sx={{ p: 2,backgroundColor:'#f0ead6', height: '100%', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+    <Box sx={{ p: 2,backgroundColor:'#f5f5f5', height: '100%', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
       <Typography variant="h6" sx={{ mb: 2, color: '#873260' }}>Workflow Components</Typography>
       
       {/* Step Component */}
@@ -42,7 +42,7 @@ const WorkflowSidebar = ({ templates, workflows, onSaveClick, onDeleteWorkflow  
             borderRadius: '4px',
             mb: 1,
             cursor: 'grab',
-            '&:hover': { backgroundColor: '#f5f5f5' }
+            '&:hover': { backgroundColor: '#b2beb5' }
           }}
           draggable
           onDragStart={(event) => onDragStart(event, 'step')}
@@ -66,7 +66,7 @@ const WorkflowSidebar = ({ templates, workflows, onSaveClick, onDeleteWorkflow  
                 borderRadius: '4px',
                 mb: 1,
                 cursor: 'grab',
-                '&:hover': { backgroundColor: '#f5f5f5' }
+                '&:hover': { backgroundColor: '#b2beb5' }
               }}
               draggable
               onDragStart={(event) => onDragStart(event, 'template', template)}
@@ -93,7 +93,7 @@ const WorkflowSidebar = ({ templates, workflows, onSaveClick, onDeleteWorkflow  
             borderRadius: '4px',
             mb: 1,
             cursor: 'grab',
-            '&:hover': { backgroundColor: '#f5f5f5' }
+            '&:hover': { backgroundColor: '#b2beb5' }
           }}
           draggable
           onDragStart={(event) => onDragStart(event, 'branch', { id: 'branch-template' })}
@@ -117,7 +117,7 @@ const WorkflowSidebar = ({ templates, workflows, onSaveClick, onDeleteWorkflow  
                 borderRadius: '4px',
                 mb: 1,
                 cursor: 'grab',
-                '&:hover': { backgroundColor: '#f5f5f5' }
+                '&:hover': { backgroundColor: '#00bfff' }
               }}
               draggable
               onDragStart={(event) => onDragStart(event, 'workflow', workflow)}
@@ -137,15 +137,18 @@ const WorkflowSidebar = ({ templates, workflows, onSaveClick, onDeleteWorkflow  
       </List>
       
       {/* Save Button */}
-      <Button 
-        variant="contained" 
-        color="primary" 
-        fullWidth 
-        sx={{ mt: 2 }}
-        onClick={onSaveClick}
-      >
-        Save Workflow
-      </Button>
+
+      {hasNodes && (
+        <Button 
+          variant="contained" 
+          color="primary" 
+          fullWidth 
+          sx={{ mt: 2 }}
+          onClick={onSaveClick}
+        >
+          {isWorkflowLoaded ? 'Save as other Name' : 'Save as Workflow'}
+        </Button>
+      )}
     </Box>
   );
 };

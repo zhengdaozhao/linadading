@@ -141,7 +141,7 @@ const WorkflowCreation = () => {
           // Create a new step node
           const stepId = `step-${uuidv4()}`;
           const stepLabel = `STEP ${stepCounter}`;
-          const status = stepLabel === 'STEP 1' ? 'Active' : 'Locked'; // Set status based on label
+          const status = stepLabel === 'STEP 1' || stepLabel === 'Step 1' ? 'Active' : 'Waiting'; // Set status based on label
         
           newNode = {
             id: stepId,
@@ -221,7 +221,7 @@ const WorkflowCreation = () => {
             templateId: node.data.templateId,
             templateName: node.data.templateName,
             innerNodes: node.data.innerNodes,
-            assignTo: node.data.assignTo || '',
+            // assignTo: node.data.assignTo || '',
             status: node.data.status || 'PENDING',
             position: nodePosition,
             tasks: node.data.tasks || [],
@@ -533,7 +533,7 @@ const WorkflowCreation = () => {
         });
         
         // Create step node
-        const status = step.label === 'STEP 1' ? 'Active' : 'Locked'; // Set status based on label
+        // const status = step.label === 'STEP 1' || step.label === 'Step 1' ? 'Active' : 'Waiting'; // Set status based on label
         newNodes.push({
           id: step.id,
           type: 'step',
@@ -541,7 +541,7 @@ const WorkflowCreation = () => {
           data: {
             label: step.label,
             tasks: tasks,
-            status: status, // Add status field
+            status: step.status, // Add status field
             onStepUpdate: handleStepUpdate,
             onTaskClick: handleTaskClick,
             onTaskReorder: handleTaskReorder,
@@ -694,7 +694,7 @@ const WorkflowCreation = () => {
             templateId: node.data.templateId,
             templateName: node.data.templateName,
             innerNodes: node.data.innerNodes,
-            assignTo: node.data.assignTo || '',
+            // assignTo: node.data.assignTo || '',
             status: node.data.status || 'PENDING',
             position: nodePosition,
             tasks: node.data.tasks || [],
@@ -766,7 +766,7 @@ const WorkflowCreation = () => {
         steps: steps,
         branches: branches,
         // 2025/4/11 add
-        activeStep:'Step 1'
+        activeStep:'STEP 1'
       };
       
       // Save to backend
@@ -801,7 +801,7 @@ const WorkflowCreation = () => {
   };
   
   return (
-    <Box sx={{ display: 'flex', height: 'calc(100vh - 64px)' }}>
+    <Box sx={{ display: 'flex', height: 'calc(100vh - 90px)' }}>
 
       {/* // 在 JSX 中添加 Snackbar */}
       <Snackbar
@@ -825,6 +825,8 @@ const WorkflowCreation = () => {
         workflows={workflows} 
         onSaveClick={handleSaveWorkflow} 
         onDeleteWorkflow={deleteWorkflow} // Pass the delete function as a prop
+        isWorkflowLoaded={isWorkflowLoaded}
+        hasNodes={nodes.length > 0}
       />
       
       <Box sx={{ flexGrow: 1, height: '100%' }} ref={reactFlowWrapper}>
@@ -867,22 +869,24 @@ const WorkflowCreation = () => {
           </div>
 
           {/* 2025/4/9 add Clear the canvas button */}
-          <Button
-            variant="contained"
-            color="secondary"
-            onClick={() => {
-              setNodes([]);
-              setEdges([]);
-              setWorkflowName('');
-              setStepCounter(1);
-              // setTaskCounters({});
-              setGlobalTaskCounter(1);
-              setIsWorkflowLoaded(false); // Reset the workflow loaded state
-            }}
-            sx={{ position: 'absolute', top: 16, left: 16, zIndex: 10 }}
-          >
-            Clear Canvas
-          </Button>
+          {nodes.length > 0 && (
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={() => {
+                setNodes([]);
+                setEdges([]);
+                setWorkflowName('');
+                setStepCounter(1);
+                // setTaskCounters({});
+                setGlobalTaskCounter(1);
+                setIsWorkflowLoaded(false); // Reset the workflow loaded state
+              }}
+              sx={{ position: 'absolute', top: 16, left: 16, zIndex: 10 }}
+            >
+              Clear Canvas
+            </Button>
+          )}
 
         {/* Update Workflow button */}
         {/* Wrapper for buttons in top-right corner */}

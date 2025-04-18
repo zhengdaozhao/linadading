@@ -203,6 +203,10 @@ const AppRouter = () => {
           element: <ProtectedRouteWrapper><TaskProcessing /></ProtectedRouteWrapper>,
         },
         {
+          path: 'task-processing/:stepId',
+          element: <ProtectedRouteWrapper><TaskProcessing /></ProtectedRouteWrapper>,
+        },
+        {
           path: '',
           element: <ProtectedRouteWrapper><TemplateDesign /></ProtectedRouteWrapper>,
         },

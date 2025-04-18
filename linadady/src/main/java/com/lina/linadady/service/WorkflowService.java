@@ -118,6 +118,8 @@ public class WorkflowService {
                 };
                 // Save step
                 // 2025/4/9 toczpd add
+                // step.setStatus(step.getLabel()=="STEP 1" ? "Active" : "Waiting");
+                step.setStatus(step.getStatus());
                 step.setTasks(null);
                 stepRepository.save(step);
             });

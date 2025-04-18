@@ -13,20 +13,22 @@
 } */
 /* Update these styles */
 .flow-canvas-wrapper {
-    display: flex;
-    height: 600px; /* Set a fixed height */
-    width: 100%;
-    margin-top: 20px; /* Add some margin at the top */
-  }
-  
-  .flow-canvas {
-    flex: 1;
-    height: 100%; /* Use 100% of parent height */
-    border: 1px solid #eee;
-    border-radius: 4px;
-    position: relative;
-    overflow: hidden; /* Prevent overflow */
-  }
+  display: flex;
+  height: calc(100vh - 90px); /* 与 WorkflowCreation 保持一致 */
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* 防止出现滚动条 */
+}
+
+.flow-canvas {
+  width: 100%;
+  height: 100%;
+  border: 1px solid #eee;
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+}
   
   /* Add this to ensure ReactFlow fills the container */
   .react-flow {
